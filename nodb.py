@@ -45,10 +45,10 @@ class Collection():
 
 	def _filter(self, query, doc, nested=True):
 		for key, val in query.iteritems():
-			if type(doc.get(key)) == (tuple or list) and type(val) != (tuple or list) and nested:
+			if type(doc.get(key)) in (tuple, list) and type(val) not in (tuple, list) and nested:
 				if val not in doc.get(key):
 					return False
-			elif type(doc.get(key)) == (tuple or list) and type(val) == tuple or list and nested:
+			elif type(doc.get(key)) in (tuple, list) and type(val) in (tuple, list) and nested:
 				for v in val:
 					if v not in doc.get(key):
 						return False
@@ -88,5 +88,18 @@ class Collection():
 			raise Exception
 		return results[0]
 
+	def every(self, query):
+		results = list(self.find(query))
+		return len(results) == len(self.collection)
+
+	def at(self, indexes):
+		return [self.collection[i] for i in indexes]
+
+	def countBy(self, *args, **kwargs):
+		raise NotImplementedError
+
+	def filter(self, *args, **kwargs):
+ 	  	raise NotImplementedError
+  
 	def read(self):
 		return self.collection
