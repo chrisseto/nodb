@@ -76,6 +76,22 @@ class Collection():
 		doc = self.find_one(query)
 		self.collection.remove(doc)
 
+	def _filter(self, query, doc, nested=True):
+		for key, val in query.iteritems():
+			if type(doc.get(key)) in (tuple, list) and type(val) not in (tuple, list) and nested:
+				if val not in doc.get(key):
+					return False
+			elif type(doc.get(key)) in (tuple, list) and type(val) in (tuple, list) and nested:
+				for v in val:
+					if v not in doc.get(key):
+						return False
+			elif type(doc.get(key)) == dict and type(val) == dict and nested:
+				if not self._filter(query=val, doc=doc.get(key)):
+					return False
+			elif doc.get(key) != val:
+				return False
+		return True
+
 	def find(self, query, index=False):
 		for ind, doc in enumerate(self.collection):
 			if self._filter(query, doc):
@@ -127,20 +143,25 @@ class Q():
 
 class QQ(Q):
 	def __init__(self, q1, op, q2):
+		self.ops = []
 		if not isinstance(q1, QQ):
-			self.qs = [q1, op, q2]
+			self.qs = [q1, q2]
+			self.ops.append(op)
 		else:
-			qs = [q1.qs, op, q2]
-			self.qs = list(itertools.chain(*qs)
-		'''
-		self.op = op
-		self.qs = []
-		for q in args:
-			if isinstance(q, QQ) and q.op == op:
-				self.qs += q.qs
-			else:
-				self.qs.append(q)
-		'''
+			qs = [q1.qs, q2]
+			self.ops.append(op)
+			self.qs = list(itertools.chain(*qs))
+
 	def __call__(self, each):
-		return reduce(lambda left, op, rigth: left(each) and right(each) if op == 'and' else left(each) or right(each), self.qs)
+		if self.ops[0] == 'and':
+			truth = self.qs[0](each) and self.qs[1](each)
+		else:
+			truth = self.qs[0](each) or self.qs[1](each)
+		if len(self.ops) > 1:
+			for i in range(1, len(self.ops)):
+				if self.ops[i] == 'and':
+					truth = truth and self.qs[i + 1](each)
+				else:
+					truth = truth or self.qs[i + 1](each)
+		return truth
 

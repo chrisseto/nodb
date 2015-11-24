@@ -11,14 +11,18 @@ def populate_data():
 			'age': 22},
 			{'name': 'Donnie Trumpet',
 			'profession': 'musician',
-			'age': False}
+			'age': False},
+			{'name': 'Peter',
+			'profession': 'producer',
+			'age': False
+			}
 		],
 		'songs': [
 			{'title': 'Miracle',
 			'by': 'Donnie Trumpet'},
 			{'title': 'Home Studio', 
 			'by': 'Chance'},
-		]
+		],
 	}
 
 def test_filter(populate_data):
@@ -57,17 +61,42 @@ def test_Q(populate_data):
 def test_Q_and(populate_data):
 	db = Nodb()
 	db.load(populate_data)
-	chance = db['people'].find(
+	chance = db['people'].filter(
 			Q('profession', 'eq', 'musician') & Q('age', 'eq', 22)
 		)
 	assert len(list(chance)) == 1
 	assert list(chance)[0]['name'] == 'Chance'
 
-def test_Q_and(populate_data):
+def test_Q_or(populate_data):
 	db = Nodb()
 	db.load(populate_data)
-	sox = db['people'].find(
+	sox = db['people'].filter(
 			Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance')
 		)
 	assert len(list(sox)) == 2
+
+def test_Q_big(populate_data):
+	db = Nodb()
+	db.load(populate_data)
+	sox = db['people'].filter(
+			Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance') | Q('profession', 'eq', 'producer')
+		)
+	assert len(list(sox)) == 3
+
+def test_Q_big_and(populate_data):
+	db = Nodb()
+	db.load(populate_data)
+	sox = db['people'].filter(
+			Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance') & Q('profession', 'eq', 'producer')
+		)
+	assert len(list(sox)) == 0
+
+def test_Q_big_and_true(populate_data):
+	db = Nodb()
+	db.load(populate_data)
+	sox = db['people'].filter(
+			Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance') & Q('profession', 'eq', 'musician')
+		)
+	assert len(list(sox)) == 2
+
 
