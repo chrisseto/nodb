@@ -142,19 +142,5 @@ class QQ(Q):
 				self.qs.append(q)
 		'''
 	def __call__(self, each):
-		reduce
-
-def translate(query):
-	if query.operator == 'and':
-		re
-	
-
-	lambda x,y: x and y if 
-
-	def combine(left, op, right):
-		return (x and y if op == 'and' else x or y)
-
-
-
-
+		return reduce(lambda left, op, rigth: left(each) and right(each) if op == 'and' else left(each) or right(each), self.qs)
 
