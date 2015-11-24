@@ -1,6 +1,7 @@
 import json
+import itertools
 
-class NoDb():
+class Nodb():
 
 	def __init__(self, file_=False):
 		if not file_:
@@ -12,7 +13,7 @@ class NoDb():
 		except (ValueError, IOError):
 			print 'Overriding File'
 			json.dump({}, self.file_)
-			collections = json.load(self.file_)            
+			collections = json.load(self.file_)
 
 		for key, val in collections.iteritems():
 			self.collections[key] = Collection(key, val)
@@ -26,6 +27,10 @@ class NoDb():
     
 	def _write(self):
 		json.dump(self.read(), self.file_)
+
+	def load(self, data):
+		for key, val in data.iteritems():
+			self.collections[key] = Collection(key, val)
 
 	def read(self):
 		noDb = {}
@@ -43,21 +48,11 @@ class Collection():
 		self.name = name
 		self.collection = data or []
 
-	def _filter(self, query, doc, nested=True):
-		for key, val in query.iteritems():
-			if type(doc.get(key)) in (tuple, list) and type(val) not in (tuple, list) and nested:
-				if val not in doc.get(key):
-					return False
-			elif type(doc.get(key)) in (tuple, list) and type(val) in (tuple, list) and nested:
-				for v in val:
-					if v not in doc.get(key):
-						return False
-			elif type(doc.get(key)) == dict and type(val) == dict and nested:
-				if not self._filter(query=val, doc=doc.get(key)):
-					return False
-			elif doc.get(key) != val:
-				return False
-		return True
+	def __getitem__(self, index):
+		return self.collection[index]
+
+	def __iter__(self):
+		return iter(self.collection)
 
 	def insert(self, data):
 		self.collection.append(data)
@@ -68,10 +63,14 @@ class Collection():
 		self.collection[index] = data
 		return self.collection[index]
 
-	def update(self, query, data):
-		indexes = self.find(query, index=True)
-		for index in indexes:
-			self.collection[index].update(data)
+	def update(self, data, query=None):
+		if query:
+			indexes = self.find(query, index=True)
+			for index in indexes:
+				self.collection[index].update(data)
+		else:
+			for doc in self.collection:
+				doc.update(data)
 
 	def remove(self, query):
 		doc = self.find_one(query)
@@ -81,6 +80,9 @@ class Collection():
 		for ind, doc in enumerate(self.collection):
 			if self._filter(query, doc):
 				yield ind if index else doc
+
+	def filter(self, predicate):
+		return self.__class__(self.name, filter(predicate, self.collection))
 
 	def find_one(self, query, index=False):
 		results = list(self.find(query, index))
@@ -98,8 +100,61 @@ class Collection():
 	def countBy(self, *args, **kwargs):
 		raise NotImplementedError
 
-	def filter(self, *args, **kwargs):
- 	  	raise NotImplementedError
-  
-	def read(self):
-		return self.collection
+
+class Q():
+	def __or__(self, other):
+		return QQ(self, 'or', other)
+
+	def __and__(self, other):
+		return QQ(self, 'and', other)
+
+	def __init__(self, field, op, val):
+		self.field = field
+		self.op = op
+		self.val = val
+
+	def __call__(self, each):
+		if self.op == 'in':
+			return self.val in each[self.field]
+		elif self.op == 'ni':
+			return self.val not in each[self.field]
+		elif self.op == 'eq':
+			return self.val == each[self.field]
+		elif self.op == 'ne':
+			return self.val != each[self.field]
+		else:
+			raise BaseException
+
+class QQ(Q):
+	def __init__(self, q1, op, q2):
+		if not isinstance(q1, QQ):
+			self.qs = [q1, op, q2]
+		else:
+			qs = [q1.qs, op, q2]
+			self.qs = list(itertools.chain(*qs)
+		'''
+		self.op = op
+		self.qs = []
+		for q in args:
+			if isinstance(q, QQ) and q.op == op:
+				self.qs += q.qs
+			else:
+				self.qs.append(q)
+		'''
+	def __call__(self, each):
+		reduce
+
+def translate(query):
+	if query.operator == 'and':
+		re
+	
+
+	lambda x,y: x and y if 
+
+	def combine(left, op, right):
+		return (x and y if op == 'and' else x or y)
+
+
+
+
+
