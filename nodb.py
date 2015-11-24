@@ -1,5 +1,5 @@
 import json
-import itertools
+
 
 class Nodb():
 
@@ -118,6 +118,7 @@ class Collection():
 
 
 class Q():
+
 	def __or__(self, other):
 		return QQ(self, 'or', other)
 
@@ -144,13 +145,17 @@ class Q():
 class QQ(Q):
 	def __init__(self, q1, op, q2):
 		self.ops = []
+		self.qs = []
 		if not isinstance(q1, QQ):
 			self.qs = [q1, q2]
 			self.ops.append(op)
 		else:
-			qs = [q1.qs, q2]
-			self.ops.append(op)
-			self.qs = list(itertools.chain(*qs))
+			for item in q1.qs:
+				self.qs.append(item)
+			self.qs.append(q2)
+			for item in q1.ops:
+				self.ops.append(item)
+			self.ops.append(item)
 
 	def __call__(self, each):
 		if self.ops[0] == 'and':
