@@ -34,19 +34,19 @@ def test_filter(populate_data):
 def test_find_one(populate_data):
 	db = Nodb()
 	db.load(populate_data)
-	assert db['people'].find_one({'name':'Chance'})
+	assert db['people'].find_one(Q('name', 'eq', 'Chance'))
 
 def test_update(populate_data):
 	db = Nodb()
 	db.load(populate_data)
 	db['people'].update({'profession':'rapper'}, {'name':'Chance'})
-	assert db['people'].find_one({'name':'Chance'})['profession'] == 'rapper'
+	assert db['people'].find_one(Q('name', 'eq', 'Chance'))['profession'] == 'rapper'
 
 def test_chain(populate_data):
 	db = Nodb()
 	db.load(populate_data)
 	db['people'].filter(lambda x: x['age'] == 22).update({'profession':'rapper'})
-	assert db['people'].find_one({'name':'Chance'})['profession'] == 'rapper'
+	assert db['people'].find_one(Q('name', 'eq', 'Chance'))['profession'] == 'rapper'
 
 def test_Q(populate_data):
 	db = Nodb()
@@ -87,7 +87,7 @@ def test_Q_big_and(populate_data):
 	db = Nodb()
 	db.load(populate_data)
 	sox = db['people'].filter(
-			Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance') & Q('profession', 'eq', 'producer')
+			((Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance')) & Q('profession', 'eq', 'producer'))
 		)
 	assert len(list(sox)) == 0
 
@@ -98,5 +98,19 @@ def test_Q_big_and_true(populate_data):
 			Q('name', 'eq', 'Donnie Trumpet') | Q('name', 'eq', 'Chance') & Q('profession', 'eq', 'musician')
 		)
 	assert len(list(sox)) == 2
+
+def test_Q_and_simple():
+	qq = Q('id', 'eq', 2) | Q('id', 'eq', 1)
+	assert qq({'id': 1}) is True 
+	assert qq({'id': 2}) is True 
+	assert qq({'id': 3}) is False
+
+def test_Q_and_complex():
+	qq = (Q('id', 'eq', 2) | Q('id', 'eq', 1)) & Q('type', 'eq', 'foo')
+	assert qq({'id': 1, 'type': 'foo'}) is True 
+	assert qq({'id': 2, 'type': 'foo'}) is True 
+	assert qq({'id': 3, 'type': 'foo'}) is False
+
+	assert qq({'id': 1, 'type': 'bar'}) is False
 
 

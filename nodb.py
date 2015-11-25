@@ -100,11 +100,11 @@ class Collection():
 	def filter(self, predicate):
 		return self.__class__(self.name, filter(predicate, self.collection))
 
-	def find_one(self, query, index=False):
-		results = list(self.find(query, index))
-		if len(results) != 1:
+	def find_one(self, predicate):
+		result = self.filter(predicate)
+		if len(list(result)) != 1:
 			raise Exception
-		return results[0]
+		return result[0]
 
 	def every(self, query):
 		results = list(self.find(query))
@@ -144,29 +144,12 @@ class Q():
 
 class QQ(Q):
 	def __init__(self, q1, op, q2):
-		self.ops = []
-		self.qs = []
-		if not isinstance(q1, QQ):
-			self.qs = [q1, q2]
-			self.ops.append(op)
-		else:
-			for item in q1.qs:
-				self.qs.append(item)
-			self.qs.append(q2)
-			for item in q1.ops:
-				self.ops.append(item)
-			self.ops.append(item)
+		self.q1 = q1
+		self.q2 = q2
+		self.op = op
 
 	def __call__(self, each):
-		if self.ops[0] == 'and':
-			truth = self.qs[0](each) and self.qs[1](each)
+		if self.op == 'and':
+			return self.q1(each) and self.q2(each)
 		else:
-			truth = self.qs[0](each) or self.qs[1](each)
-		if len(self.ops) > 1:
-			for i in range(1, len(self.ops)):
-				if self.ops[i] == 'and':
-					truth = truth and self.qs[i + 1](each)
-				else:
-					truth = truth or self.qs[i + 1](each)
-		return truth
-
+			return self.q1(each) or self.q2(each)
