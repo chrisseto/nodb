@@ -58,44 +58,32 @@ class Collection():
 		self.collection.append(data)
 		return self.collection[-1]
 
-	def replace(self, query, data):
-		index = self.find_one(query, index=True)
-		self.collection[index] = data
-		return self.collection[index]
+	def replace(self, data, predicate=None):
+		if predicate:
+			collection = self.filter(predicate)
+			for i in range(len(list(collection))):
+				collection[i] = data
+			return collection
+		else:
+			for i in range(len(list(self))):
+				self.collection[i] = data
+			return self.collection
 
-	def update(self, data, query=None):
-		if query:
-			indexes = self.find(query, index=True)
-			for index in indexes:
-				self.collection[index].update(data)
+	def update(self, data, predicate=None):
+		if predicate:
+			collection = self.filter(predicate)
+			for i in range(len(list(self))):
+				self.collection[i].update(data)
 		else:
 			for doc in self.collection:
 				doc.update(data)
 
-	def remove(self, query):
-		doc = self.find_one(query)
+	def remove(self, predicate):
+		doc = self.find_one(predicate)
 		self.collection.remove(doc)
 
-	def _filter(self, query, doc, nested=True):
-		for key, val in query.iteritems():
-			if type(doc.get(key)) in (tuple, list) and type(val) not in (tuple, list) and nested:
-				if val not in doc.get(key):
-					return False
-			elif type(doc.get(key)) in (tuple, list) and type(val) in (tuple, list) and nested:
-				for v in val:
-					if v not in doc.get(key):
-						return False
-			elif type(doc.get(key)) == dict and type(val) == dict and nested:
-				if not self._filter(query=val, doc=doc.get(key)):
-					return False
-			elif doc.get(key) != val:
-				return False
-		return True
-
-	def find(self, query, index=False):
-		for ind, doc in enumerate(self.collection):
-			if self._filter(query, doc):
-				yield ind if index else doc
+	def find(self, predicate):
+		return self.__class__(self.name, filter(predicate, self.collection))
 
 	def filter(self, predicate):
 		return self.__class__(self.name, filter(predicate, self.collection))
@@ -106,15 +94,53 @@ class Collection():
 			raise Exception
 		return result[0]
 
-	def every(self, query):
-		results = list(self.find(query))
+	def every(self, predicate):
+		results = list(self.find(predicate))
 		return len(results) == len(self.collection)
 
 	def at(self, indexes):
 		return [self.collection[i] for i in indexes]
 
-	def countBy(self, *args, **kwargs):
-		raise NotImplementedError
+	def chunk(self, size=1):
+		chunks = []
+		l = len(list(self))
+		r = l/size
+		if r:
+			for i in range(r-1):
+				chunks.append(self.__class__(self.name, self[(i*size):(i*size + size)]))
+		if l%size:
+			chunks.append(self.__class__(self.name, self[(l-size):l-1]))
+		return chunks
+
+	def difference(self, values):
+		diffs = []
+		for i in list(self):
+			if i not in values:
+				diffs.append(i)
+		return self.__class__(self.name, diffs)
+
+	def drop(self, n=1):
+		return self.__class__(self.name, list(self)[n:]) if (n < len(list(self))) else self.__class__(self.name, [])
+
+	def drop_right(self, n=1):
+		return self.__class__(self.name, list(self)[0:(len(list(self)) - n )]) if (n < len(list(self))) else self.__class__(self.name, [])
+
+	def drop_right_while(self, predicate):
+		l = len(list(self)) - 1 
+		for i in range(l):
+			if not predicate(self[l - i]):
+				rest = l - i
+				break
+		return self.__class__(self.name, list(self)[:rest])
+
+	def drop_while(self, predicate):
+		l = len(list(self)) - 1 
+		for i in range(l):
+			if not predicate(self[i]):
+				rest = i
+				break
+		return self.__class__(self.name, list(self)[i:])
+
 
 
 class Q():
