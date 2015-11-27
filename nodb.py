@@ -141,6 +141,8 @@ class Collection():
 				break
 		return self.__class__(self.name, list(self)[i:])
 
+	def sort(self, field):
+		return self.__class__(self.name, sorted(self.collection, key=lambda x: x[field]))
 
 
 class Q():
