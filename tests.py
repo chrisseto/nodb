@@ -26,6 +26,25 @@ def populate_data():
         ],
     }
 
+@pytest.fixture
+def collection_data():
+    return [
+        {'name':'Everything I Saw',
+         'number': 1,
+         'type':'song'},
+        {'name':'Came so Easy',
+         'number': 2,
+         'type':'song'},
+        {'name':'Trying',
+         'number': 3,
+         'type':'song'},
+        {'name':'Traveller',
+         'number': 4,
+         'type':'song'},
+        {'name':'Chip on my Shoulder',
+         'number': 5,
+         'type':'song'}
+    ]
 
 def test_filter(populate_data):
     db = Nodb()
@@ -125,4 +144,15 @@ def test_Q_and_complex():
 
     assert qq({'id': 1, 'type': 'bar'}) is False
 
+def test_every(collection_data):
+    c = Collection('All of it Was Mine', collection_data)
+    assert c.every(lambda x: x['type'] == 'song')
 
+def test_difference(collection_data):
+    c = Collection('All of it Was Mine', collection_data)
+    values = [{'name': 'Everything I Saw', 'number': 1, 'type':'song'},
+        {'name' :'Came so Easy', 'number': 2, 'type':'song'}]
+    r = c.difference(values)
+    assert list(r) == [{'name': 'Trying','number': 3,'type':'song'},
+        {'name':'Traveller', 'number': 4, 'type':'song'},
+        {'name':'Chip on my Shoulder', 'number': 5, 'type':'song'}]
