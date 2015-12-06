@@ -55,6 +55,9 @@ class Collection():
     def __iter__(self):
         return iter(self.collection)
 
+    def  __repr__(self):
+        return '<Collection instance with name {0} and {1} items>'.format(self.name, len(list(self)))
+
     def insert(self, data):
         self.collection.append(data)
         return self.collection[-1]

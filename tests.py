@@ -62,7 +62,7 @@ def test_find_one(populate_data):
 def test_update(populate_data):
     db = Nodb()
     db.load(populate_data)
-    db['people'].update({'profession': 'rapper'}, {'name': 'Chance'})
+    db['people'].update({'profession': 'rapper'}, lambda x: x['name'] == 'Chance')
     assert db['people'].find_one(Q('name', 'eq', 'Chance'))['profession'] == 'rapper'
 
 
